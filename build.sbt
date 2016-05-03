@@ -5,6 +5,7 @@ scalaVersion := "2.11.8"
 
 enablePlugins(PlayScala)
 disablePlugins(PlayLayoutPlugin)
+PlayKeys.playMonitoredFiles ++= (sourceDirectories in (Compile, TwirlKeys.compileTemplates)).value
 
 enablePlugins(GitVersioning)
 enablePlugins(GitBranchPrompt)

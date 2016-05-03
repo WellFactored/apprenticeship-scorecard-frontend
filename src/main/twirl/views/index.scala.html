@@ -1,0 +1,17 @@
+@import apprenticeshipScorecard.frontend.services.Subject
+@(subjects: Seq[Subject], regions:Seq[String])
+
+
+<form>
+    <select>
+        @subjects.sortBy(_.subject_tier_2_code).map { s =>
+            <option value='@s.subject_tier_2_code'>@s.subject_tier_2_code @s.subject_tier_2_title</option>
+        }
+    </select>
+    <br>
+    <select>
+        @regions.sorted.map { r =>
+            <option value='@r'>@r</option>
+        }
+    </select>
+</form>
