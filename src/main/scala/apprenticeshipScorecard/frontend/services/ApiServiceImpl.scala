@@ -41,42 +41,25 @@ object SearchResults {
 case class Region(region: String)
 
 object Region {
-  implicit val reads= Json.reads[Region]
+  implicit val reads = Json.reads[Region]
 }
 
 class ApiServiceImpl @Inject()(ws: WSClient) extends ApiService {
-
   override def regions(implicit ec: ExecutionContext): Future[Seq[String]] = {
-
-    val bodyParams = BodyParams(extract = Some(Seq("region")))
-
-    val body = Json.toJson(bodyParams)
-    Logger.info(Json.prettyPrint(body))
-    ws.url("http://localhost:9004/providers").post(body).map { response =>
-      response.status match {
-        case 200 => response.json.validate[SearchResults[Region]] match {
-          case JsSuccess(sr, _) => sr.results.map(_.region)
-          case JsError(errs) =>
-            Logger.warn(errs.toString)
-            throw new Exception(errs.toString)
-        }
-        case _ =>
-          Logger.warn(response.body)
-          throw new Exception(response.body)
-      }
-    }
+    val params = BodyParams(extract = Some(Seq("region")))
+    call[Region]("http://localhost:9004/providers", params).map(_.results.map(_.region))
   }
 
   override def subjects(implicit ec: ExecutionContext): Future[Seq[Subject]] = {
+    val params = BodyParams(extract = Some(Seq("subject_tier_2_code", "subject_tier_2_title")))
+    call[Subject]("http://localhost:9004/apprenticeships", params).map(_.results)
+  }
 
-    val bodyParams = BodyParams(extract = Some(Seq("subject_tier_2_code", "subject_tier_2_title")))
-
-    val body = Json.toJson(bodyParams)
-    Logger.info(Json.prettyPrint(body))
-    ws.url("http://localhost:9004/apprenticeships").post(body).map { response =>
+  def call[T: Reads](url: String, params: BodyParams)(implicit ec: ExecutionContext): Future[SearchResults[T]] = {
+    ws.url(url).post(Json.toJson(params)).map { response =>
       response.status match {
-        case 200 => response.json.validate[SearchResults[Subject]] match {
-          case JsSuccess(sr, _) => sr.results
+        case 200 => response.json.validate[SearchResults[T]] match {
+          case JsSuccess(sr, _) => sr
           case JsError(errs) =>
             Logger.warn(errs.toString)
             throw new Exception(errs.toString)
@@ -87,4 +70,6 @@ class ApiServiceImpl @Inject()(ws: WSClient) extends ApiService {
       }
     }
   }
+
+
 }
